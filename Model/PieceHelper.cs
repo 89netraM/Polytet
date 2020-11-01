@@ -43,7 +43,7 @@ namespace Polytet.Model
 			return (byte)(b & 0b_1111_0000 | (byte)piece);
 		}
 
-		private static readonly IReadOnlyDictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>> PieceOffsets = new Dictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>>
+		private static readonly IReadOnlyDictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>> pieceOffsets = new Dictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>>
 		{
 			{
 				Piece.I,
@@ -114,8 +114,9 @@ namespace Polytet.Model
 				throw new ArgumentException();
 			}
 
-			IReadOnlyList<IEnumerable<(int, int)>> offsets = PieceOffsets[piece];
-			return offsets[Math.Abs(rotation % offsets.Count)];
+			IReadOnlyList<IEnumerable<(int, int)>> offsets = pieceOffsets[piece];
+			int rotOff = rotation % offsets.Count;
+			return offsets[rotOff < 0 ? rotOff + offsets.Count : rotOff];
 		}
 	}
 }
