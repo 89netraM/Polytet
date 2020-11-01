@@ -2,12 +2,23 @@
 {
 	public static class PieceHelper
 	{
+		public static Piece GetPieceFromTop(this byte b)
+		{
+			return GetPieceFromBottom((byte)(b >> 4));
+		}
+		public static Piece GetPieceFromBottom(this byte b)
+		{
+			return (Piece)(b & 0b_0000_1111);
+		}
+
 		public static bool TryGetPieceFromTop(this byte b, out Piece piece)
 		{
 			return TryGetPieceFromBottom((byte)(b >> 4), out piece);
 		}
 		public static bool TryGetPieceFromBottom(this byte b, out Piece piece)
 		{
+			b = (byte)(b & 0b_0000_1111);
+
 			if (typeof(Piece).IsEnumDefined(b))
 			{
 				piece = (Piece)b;
