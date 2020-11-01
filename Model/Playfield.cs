@@ -46,7 +46,9 @@ namespace Polytet.Model
 				0 <= y && y < Height;
 		}
 
-		private byte[] array;
+		private readonly byte[] array;
+
+		private (int startY, int length)? removedRows;
 
 		public Piece this[int x, int y]
 		{
@@ -90,6 +92,7 @@ namespace Polytet.Model
 		private Playfield(byte[] array)
 		{
 			this.array = array;
+			removedRows = null;
 		}
 
 		private IEnumerable<(int, int)> GetPositionsOfPiece(Piece piece, int x, int y, int rotation)
@@ -130,6 +133,16 @@ namespace Polytet.Model
 
 		public void RemoveRows(int startY, int length)
 		{
+			if (length < 1)
+			{
+				throw new ArgumentOutOfRangeException(nameof(length), "Can not remove zero rows");
+			}
+
+			if (startY + length > Height)
+			{
+				throw new ArgumentOutOfRangeException(nameof(startY));
+			}
+
 			for (int y = 0; y < length; y++)
 			{
 				for (int x = 0; x < Width; x++)
@@ -137,20 +150,23 @@ namespace Polytet.Model
 					this[x, startY + y] = Piece.Empty;
 				}
 			}
+
+			removedRows = (startY, length);
 		}
 
 		public void Tick()
 		{
-			for (int y = Height - 2; y >= 0; y--)
+			if (removedRows.HasValue)
 			{
-				for (int x = 0; x < Width; x++)
+				for (int y = removedRows.Value.startY - 1; y >= 0; y--)
 				{
-					if (this[x, y] != Piece.Empty && this[x, y + 1] == Piece.Empty)
+					for (int x = 0; x < Width; x++)
 					{
-						this[x, y + 1] = this[x, y];
-						this[x, y] = Piece.Empty;
+						this[x, y + removedRows.Value.length] = this[x, y];
 					}
 				}
+
+				removedRows = null;
 			}
 		}
 	}
