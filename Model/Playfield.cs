@@ -48,7 +48,7 @@ namespace Polytet.Model
 
 		private readonly byte[] array;
 
-		private (int startY, int length)? removedRows;
+		private readonly IList<int> removedRows;
 
 		public Piece this[int x, int y]
 		{
@@ -92,7 +92,7 @@ namespace Polytet.Model
 		private Playfield(byte[] array)
 		{
 			this.array = array;
-			removedRows = null;
+			removedRows = new List<int>();
 		}
 
 		private IEnumerable<(int, int)> GetPositionsOfPiece(Piece piece, int x, int y, int rotation)
@@ -131,43 +131,60 @@ namespace Polytet.Model
 				this[position.x, position.y] == Piece.Empty;
 		}
 
-		public void RemoveRows(int startY, int length)
-		{
-			if (length < 1)
-			{
-				throw new ArgumentOutOfRangeException(nameof(length), "Can not remove zero rows");
-			}
-
-			if (startY + length > Height)
-			{
-				throw new ArgumentOutOfRangeException(nameof(startY));
-			}
-
-			for (int y = 0; y < length; y++)
-			{
-				for (int x = 0; x < Width; x++)
-				{
-					this[x, startY + y] = Piece.Empty;
-				}
-			}
-
-			removedRows = (startY, length);
-		}
-
 		public void Tick()
 		{
-			if (removedRows.HasValue)
+			MoveDownClearedRows();
+
+			DetectAndClearFullRows();
+		}
+
+		private void MoveDownClearedRows()
+		{
+			for (int i = 0; i < removedRows.Count; i++)
 			{
-				for (int y = removedRows.Value.startY - 1; y >= 0; y--)
+				int current = removedRows[i];
+				int next = i + 1 < removedRows.Count ? removedRows[i + 1] : -1;
+				int steps = i + 1;
+
+				for (int y = current - 1; y > next; y--)
 				{
 					for (int x = 0; x < Width; x++)
 					{
-						this[x, y + removedRows.Value.length] = this[x, y];
+						this[y + steps, x] = this[y, x];
+						this[y, x] = Piece.Empty;
 					}
 				}
-
-				removedRows = null;
 			}
+
+			removedRows.Clear();
+		}
+
+		private void DetectAndClearFullRows()
+		{
+			for (int y = Height - 1; y >= 0; y--)
+			{
+				if (IsRowFull(y))
+				{
+					for (int x = 0; x < Width; x++)
+					{
+						this[x, y] = Piece.Empty;
+					}
+
+					removedRows.Add(y);
+				}
+			}
+		}
+		private bool IsRowFull(int y)
+		{
+			for (int x = 0; x < Width; x++)
+			{
+				if (this[x, y] == Piece.Empty)
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 	}
 }
