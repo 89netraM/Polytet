@@ -9,6 +9,8 @@ namespace Polytet.Model
 		private Playfield playfield;
 		private (Piece piece, int x, int y, int rotation)? floating;
 
+		private readonly Queue<Piece> nextPieces = new Queue<Piece>();
+
 		public Piece this[int x, int y]
 		{
 			get
@@ -56,7 +58,7 @@ namespace Polytet.Model
 				.Select(p => (p.x + x ?? floating.Value.x, p.y + y ?? floating.Value.y));
 		}
 
-		public void PlacePiece()
+		private void PlacePiece()
 		{
 			if (!floating.HasValue)
 			{
@@ -65,7 +67,7 @@ namespace Polytet.Model
 
 			IEnumerable<(int, int)> positions = GetPositionsOfPiece();
 
-			if (!IsValidPosition(positions))
+			if (!IsValidPositions(positions))
 			{
 				throw new ArgumentException("Can not place piece there");
 			}
@@ -76,11 +78,7 @@ namespace Polytet.Model
 			}
 		}
 
-		public bool IsValidPosition()
-		{
-			return IsValidPosition(GetPositionsOfPiece());
-		}
-		private bool IsValidPosition(IEnumerable<(int, int)> positions)
+		private bool IsValidPositions(IEnumerable<(int, int)> positions)
 		{
 			return positions.All(IsValidPosition);
 		}
@@ -88,6 +86,120 @@ namespace Polytet.Model
 		{
 			return Playfield.IsInRange(position.x, position.y) &&
 				playfield[position.x, position.y] == Piece.Empty;
+		}
+
+		public void Tick()
+		{
+			if (floating.HasValue)
+			{
+				if (!IsValidPositions(GetPositionsOfPiece().Select(p => (p.x, p.y + 1))))
+				{
+					PlacePiece();
+
+					floating = null;
+				}
+				else
+				{
+					floating = (
+						floating.Value.piece,
+						floating.Value.x,
+						floating.Value.y + 1,
+						floating.Value.rotation
+					);
+				}
+			}
+			else
+			{
+				if (nextPieces.Count > 0)
+				{
+					floating = (
+						nextPieces.Dequeue(),
+						4,
+						20,
+						0
+					);
+				}
+			}
+
+			playfield.Tick();
+		}
+
+		public bool RotateCounterClockwise() => Rotate(-1);
+		public bool RotateClockwise() => Rotate(1);
+		private bool Rotate(int dir)
+		{
+			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: floating.Value.rotation + dir)))
+			{
+				floating = (
+					floating.Value.piece,
+					floating.Value.x,
+					floating.Value.y,
+					floating.Value.rotation + dir
+				);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		public bool MoveLeft() => Move(-1);
+		public bool MoveRight() => Move(1);
+		private bool Move(int dir)
+		{
+			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: floating.Value.x + dir)))
+			{
+				floating = (
+					floating.Value.piece,
+					floating.Value.x + dir,
+					floating.Value.y,
+					floating.Value.rotation
+				);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		public bool MoveDown()
+		{
+			if (floating.HasValue)
+			{
+				int lastValidY = floating.Value.y;
+				for (int y = floating.Value.y + 1; y < Playfield.Height; y++)
+				{
+					if (IsValidPositions(GetPositionsOfPiece(y: y)))
+					{
+						lastValidY = y;
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				if (lastValidY != floating.Value.y)
+				{
+					floating = (
+						floating.Value.piece,
+						floating.Value.x,
+						lastValidY,
+						floating.Value.rotation
+					);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 }

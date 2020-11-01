@@ -6,8 +6,8 @@ namespace Polytet.Model
 {
 	public struct Playfield
 	{
-		private const int Width = 10;
-		private const int Height = 40;
+		public const int Width = 10;
+		public const int Height = 40;
 		private const int Length = Width * Height / 2;
 
 		public static Playfield CreateEmpty()
