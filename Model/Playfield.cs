@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Polytet.Model
@@ -26,16 +27,16 @@ namespace Polytet.Model
 				throw new ArgumentException($"Length must be {Length}", nameof(array));
 			}
 
-			if (array.Any(ByteIsInvalid))
+			if (!array.All(ByteIsValid))
 			{
 				throw new ArgumentException("All bytes must be valid piece enums", nameof(array));
 			}
 
 			return new Playfield(array);
 
-			static bool ByteIsInvalid(byte b)
+			static bool ByteIsValid(byte b)
 			{
-				return !b.TryGetPieceFromTop(out Piece p) || !b.TryGetPieceFromBottom(out p);
+				return b.TryGetPieceFromTop(out Piece p) && b.TryGetPieceFromBottom(out p);
 			}
 		}
 
@@ -67,7 +68,7 @@ namespace Polytet.Model
 					return b.GetPieceFromBottom();
 				}
 			}
-			set
+			private set
 			{
 				if (!IsInRange(x, y))
 				{
@@ -89,6 +90,42 @@ namespace Polytet.Model
 		private Playfield(byte[] array)
 		{
 			this.array = array;
+		}
+
+		private IEnumerable<(int, int)> GetPositionsOfPiece(Piece piece, int x, int y, int rotation)
+		{
+			return piece
+				.GetOffsets(rotation)
+				.Select(p => (p.x + x, p.y + y));
+		}
+
+		public void PlacePiece(Piece piece, int x, int y, int rotation)
+		{
+			IEnumerable<(int x, int y)> positions = GetPositionsOfPiece(piece, x, y, rotation);
+
+			if (!IsValidPosition(positions))
+			{
+				throw new ArgumentException("Can not place piece there");
+			}
+
+			foreach (var p in positions)
+			{
+				this[p.x, p.y] = piece;
+			}
+		}
+
+		public bool IsValidPosition(Piece piece, int x, int y, int rotation)
+		{
+			return IsValidPosition(GetPositionsOfPiece(piece, x, y, rotation));
+		}
+		private bool IsValidPosition(IEnumerable<(int, int)> positions)
+		{
+			return positions.All(IsValidPosition);
+		}
+		private bool IsValidPosition((int x, int y) position)
+		{
+			return IsInRange(position.x, position.y) &&
+				this[position.x, position.y] == Piece.Empty;
 		}
 
 		public void RemoveRows(int startY, int length)

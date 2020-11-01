@@ -1,4 +1,7 @@
-﻿namespace Polytet.Model
+﻿using System;
+using System.Collections.Generic;
+
+namespace Polytet.Model
 {
 	public static class PieceHelper
 	{
@@ -38,6 +41,81 @@
 		public static byte SetPieceToBottom(this byte b, Piece piece)
 		{
 			return (byte)(b & 0b_1111_0000 | (byte)piece);
+		}
+
+		private static readonly IReadOnlyDictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>> PieceOffsets = new Dictionary<Piece, IReadOnlyList<IEnumerable<(int, int)>>>
+		{
+			{
+				Piece.I,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 1), (0, 1), (1, 1), (2, 1) },
+					new[] { (1, -1), (1, 0), (1, 1), (1, 2) },
+				}
+			},
+			{
+				Piece.J,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 0), (0, 0), (1, 0), (1, 1) },
+					new[] { (0, -1), (0, 0), (0, 1), (-1, 1) },
+					new[] { (-1, -1), (-1, 0), (0, 0), (1, 0) },
+					new[] { (1, -1), (0, -1), (0, 0), (0, 1) },
+				}
+			},
+			{
+				Piece.L,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 1), (-1, 0), (0, 0), (1, 0) },
+					new[] { (-1, -1), (0, -1), (0, 0), (0, 1) },
+					new[] { (-1, 0), (0, 0), (1, 0), (1, -1) },
+					new[] { (0, -1), (0, 0), (0, 1), (1, 1) },
+				}
+			},
+			{
+				Piece.O,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (0, 0), (1, 0), (0, 1), (1, 1) },
+				}
+			},
+			{
+				Piece.S,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 1), (0, 1), (0, 0), (1, 0) },
+					new[] { (0, -1), (0, 0), (1, 0), (1, 1) },
+				}
+			},
+			{
+				Piece.T,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 0), (0, 0), (0, 1), (1, 0) },
+					new[] { (0, -1), (-1, 0), (0, 0), (0, 1) },
+					new[] { (-1, 0), (0, 0), (0, -1), (1, 0) },
+					new[] { (0, -1), (0, 0), (1, 0), (0, 1) },
+				}
+			},
+			{
+				Piece.Z,
+				new IEnumerable<(int, int)>[]
+				{
+					new[] { (-1, 0), (0, 0), (0, 1), (1, 1) },
+					new[] { (1, -1), (1, 0), (0, 0), (0, 1) },
+				}
+			}
+		};
+		public static IEnumerable<(int x, int y)> GetOffsets(this Piece piece, int rotation)
+		{
+			if (piece == Piece.Empty)
+			{
+				throw new ArgumentException();
+			}
+
+			IReadOnlyList<IEnumerable<(int, int)>> offsets = PieceOffsets[piece];
+			return offsets[Math.Abs(rotation % offsets.Count)];
 		}
 	}
 }
