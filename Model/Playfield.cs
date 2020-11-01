@@ -40,7 +40,7 @@ namespace Polytet.Model
 			}
 		}
 
-		private static bool IsInRange(int x, int y)
+		public static bool IsInRange(int x, int y)
 		{
 			return 0 <= x && x < Width &&
 				0 <= y && y < Height;
@@ -70,7 +70,7 @@ namespace Polytet.Model
 					return b.GetPieceFromBottom();
 				}
 			}
-			private set
+			set
 			{
 				if (!IsInRange(x, y))
 				{
@@ -93,42 +93,6 @@ namespace Polytet.Model
 		{
 			this.array = array;
 			removedRows = new List<int>();
-		}
-
-		private IEnumerable<(int, int)> GetPositionsOfPiece(Piece piece, int x, int y, int rotation)
-		{
-			return piece
-				.GetOffsets(rotation)
-				.Select(p => (p.x + x, p.y + y));
-		}
-
-		public void PlacePiece(Piece piece, int x, int y, int rotation)
-		{
-			IEnumerable<(int x, int y)> positions = GetPositionsOfPiece(piece, x, y, rotation);
-
-			if (!IsValidPosition(positions))
-			{
-				throw new ArgumentException("Can not place piece there");
-			}
-
-			foreach (var p in positions)
-			{
-				this[p.x, p.y] = piece;
-			}
-		}
-
-		public bool IsValidPosition(Piece piece, int x, int y, int rotation)
-		{
-			return IsValidPosition(GetPositionsOfPiece(piece, x, y, rotation));
-		}
-		private bool IsValidPosition(IEnumerable<(int, int)> positions)
-		{
-			return positions.All(IsValidPosition);
-		}
-		private bool IsValidPosition((int x, int y) position)
-		{
-			return IsInRange(position.x, position.y) &&
-				this[position.x, position.y] == Piece.Empty;
 		}
 
 		public void Tick()
