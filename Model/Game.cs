@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -35,6 +35,8 @@ namespace Polytet.Model
 				}
 			}
 		}
+
+		public event Action<UpdateReason>? Update;
 
 		public Game() : this(Playfield.CreateEmpty()) { }
 		public Game(byte[] playfield) : this(Playfield.CreateFromSource(playfield)) { }
@@ -126,10 +128,28 @@ namespace Polytet.Model
 			}
 
 			playfield.Tick();
+
+			Update?.Invoke(UpdateReason.Tick);
 		}
 
-		public bool RotateCounterClockwise() => Rotate(-1);
-		public bool RotateClockwise() => Rotate(1);
+		public bool RotateCounterClockwise()
+		{
+			bool result = Rotate(-1);
+			if (result)
+			{
+				Update?.Invoke(UpdateReason.RotateCounterClockwise);
+			}
+			return result;
+		}
+		public bool RotateClockwise()
+		{
+			bool result = Rotate(1);
+			if (result)
+			{
+				Update?.Invoke(UpdateReason.RotateClockwise);
+			}
+			return result;
+		}
 		private bool Rotate(int dir)
 		{
 			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: floating.Value.rotation + dir)))
@@ -148,8 +168,24 @@ namespace Polytet.Model
 			}
 		}
 
-		public bool MoveLeft() => Move(-1);
-		public bool MoveRight() => Move(1);
+		public bool MoveLeft()
+		{
+			bool result = Move(-1);
+			if (result)
+			{
+				Update?.Invoke(UpdateReason.MoveLeft);
+			}
+			return result;
+		}
+		public bool MoveRight()
+		{
+			bool result = Move(1);
+			if (result)
+			{
+				Update?.Invoke(UpdateReason.MoveRight);
+			}
+			return result;
+		}
 		private bool Move(int dir)
 		{
 			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: floating.Value.x + dir)))
@@ -193,6 +229,9 @@ namespace Polytet.Model
 						lastValidY,
 						floating.Value.rotation
 					);
+
+					Update?.Invoke(UpdateReason.MoveDown);
+
 					return true;
 				}
 				else
@@ -204,6 +243,17 @@ namespace Polytet.Model
 			{
 				return false;
 			}
+		}
+
+		public enum UpdateReason
+		{
+			Tick,
+			RotateCounterClockwise,
+			RotateClockwise,
+			MoveLeft,
+			MoveRight,
+			MoveDown,
+			NewNextPiece
 		}
 	}
 }
