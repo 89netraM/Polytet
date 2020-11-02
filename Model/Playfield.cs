@@ -114,8 +114,8 @@ namespace Polytet.Model
 				{
 					for (int x = 0; x < Width; x++)
 					{
-						this[y + steps, x] = this[y, x];
-						this[y, x] = Piece.Empty;
+						this[x, y + steps] = this[x, y];
+						this[x, y] = Piece.Empty;
 					}
 				}
 			}
