@@ -36,15 +36,18 @@ namespace Polytet.Model
 			}
 		}
 
-		public Game()
+		public Game() : this(Playfield.CreateEmpty()) { }
+		public Game(byte[] playfield) : this(Playfield.CreateFromSource(playfield)) { }
+		private Game(Playfield playfield)
 		{
-			playfield = Playfield.CreateEmpty();
+			this.playfield = playfield;
 			floating = null;
 		}
 
-		public Game(byte[] playfield) : this()
+		public void AddCommingPiece(Piece piece)
 		{
-			this.playfield = Playfield.CreateFromSource(playfield);
+			nextPieces.Enqueue(piece);
+			Update?.Invoke(UpdateReason.NewNextPiece);
 		}
 
 		private IEnumerable<(int x, int y)> GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
