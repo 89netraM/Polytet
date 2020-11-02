@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -61,7 +61,7 @@ namespace Polytet.Model
 
 			return floating.Value.piece
 				.GetOffsets(rotation ?? floating.Value.rotation)
-				.Select(p => (p.x + x ?? floating.Value.x, p.y + y ?? floating.Value.y));
+				.Select(p => (p.x + (x ?? floating.Value.x), p.y + (y ?? floating.Value.y)));
 		}
 
 		private void PlacePiece()
