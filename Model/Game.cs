@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,6 +10,7 @@ namespace Polytet.Model
 		private (Piece piece, int x, int y, int rotation)? floating;
 
 		private readonly Queue<Piece> nextPieces = new Queue<Piece>();
+		public Piece? NextPiece => nextPieces.Count > 0 ? (Piece?)nextPieces.Peek() : null;
 
 		public Piece this[int x, int y]
 		{
