@@ -9,6 +9,8 @@ namespace Polytet.Model
 		private Playfield playfield;
 		public (Piece piece, int x, int y, int rotation)? Floating { get; private set; }
 
+		public int Score { get; private set; } = 0;
+
 		private readonly Queue<Piece> nextPieces = new Queue<Piece>();
 		public Piece? NextPiece => nextPieces.Count > 0 ? (Piece?)nextPieces.Peek() : null;
 
@@ -131,7 +133,8 @@ namespace Polytet.Model
 				}
 			}
 
-			playfield.Tick();
+			int newPoints = playfield.Tick();
+			Score += newPoints;
 
 			Update?.Invoke(UpdateReason.Tick);
 

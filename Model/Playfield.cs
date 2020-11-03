@@ -46,6 +46,16 @@ namespace Polytet.Model
 				0 <= y && y < Height;
 		}
 
+		private static int PointsForRows(int nRows) => nRows switch
+		{
+			0 => 0,
+			1 => 40,
+			2 => 100,
+			3 => 300,
+			4 => 1200,
+			_ => throw new ArgumentException()
+		};
+
 		private readonly byte[] array;
 
 		private readonly IList<int> removedRows;
@@ -95,11 +105,11 @@ namespace Polytet.Model
 			removedRows = new List<int>();
 		}
 
-		public void Tick()
+		public int Tick()
 		{
 			MoveDownClearedRows();
 
-			DetectAndClearFullRows();
+			return DetectAndClearFullRows();
 		}
 
 		private void MoveDownClearedRows()
@@ -123,7 +133,7 @@ namespace Polytet.Model
 			removedRows.Clear();
 		}
 
-		private void DetectAndClearFullRows()
+		private int DetectAndClearFullRows()
 		{
 			for (int y = Height - 1; y >= 0; y--)
 			{
@@ -137,6 +147,8 @@ namespace Polytet.Model
 					removedRows.Add(y);
 				}
 			}
+
+			return PointsForRows(removedRows.Count);
 		}
 		private bool IsRowFull(int y)
 		{
