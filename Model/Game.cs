@@ -7,7 +7,7 @@ namespace Polytet.Model
 	public class Game
 	{
 		private Playfield playfield;
-		private (Piece piece, int x, int y, int rotation)? floating;
+		public (Piece piece, int x, int y, int rotation)? Floating { get; private set; }
 
 		private readonly Queue<Piece> nextPieces = new Queue<Piece>();
 		public Piece? NextPiece => nextPieces.Count > 0 ? (Piece?)nextPieces.Peek() : null;
@@ -20,9 +20,9 @@ namespace Polytet.Model
 
 				if (fromField == Piece.Empty)
 				{
-					if (floating.HasValue && GetPositionsOfPiece().Any(p => p.x == x && p.y == y))
+					if (Floating.HasValue && GetPositionsOfPiece().Any(p => p.x == x && p.y == y))
 					{
-						return floating.Value.piece;
+						return Floating.Value.piece;
 					}
 					else
 					{
@@ -43,7 +43,7 @@ namespace Polytet.Model
 		private Game(Playfield playfield)
 		{
 			this.playfield = playfield;
-			floating = null;
+			Floating = null;
 		}
 
 		public void AddCommingPiece(Piece piece)
@@ -52,21 +52,21 @@ namespace Polytet.Model
 			Update?.Invoke(UpdateReason.NewNextPiece);
 		}
 
-		private IEnumerable<(int x, int y)> GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
+		public IEnumerable<(int x, int y)> GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
 		{
-			if (!floating.HasValue)
+			if (!Floating.HasValue)
 			{
 				throw new InvalidOperationException();
 			}
 
-			return floating.Value.piece
-				.GetOffsets(rotation ?? floating.Value.rotation)
-				.Select(p => (p.x + (x ?? floating.Value.x), p.y + (y ?? floating.Value.y)));
+			return Floating.Value.piece
+				.GetOffsets(rotation ?? Floating.Value.rotation)
+				.Select(p => (p.x + (x ?? Floating.Value.x), p.y + (y ?? Floating.Value.y)));
 		}
 
 		private void PlacePiece()
 		{
-			if (!floating.HasValue)
+			if (!Floating.HasValue)
 			{
 				throw new InvalidOperationException();
 			}
@@ -80,7 +80,7 @@ namespace Polytet.Model
 
 			foreach (var (x, y) in positions)
 			{
-				playfield[x, y] = floating.Value.piece;
+				playfield[x, y] = Floating.Value.piece;
 			}
 		}
 
@@ -96,21 +96,21 @@ namespace Polytet.Model
 
 		public void Tick()
 		{
-			if (floating.HasValue)
+			if (Floating.HasValue)
 			{
-				if (!IsValidPositions(GetPositionsOfPiece().Select(p => (p.x, p.y + 1))))
+				if (PreviewDropY() == Floating.Value.y)
 				{
 					PlacePiece();
 
-					floating = null;
+					Floating = null;
 				}
 				else
 				{
-					floating = (
-						floating.Value.piece,
-						floating.Value.x,
-						floating.Value.y + 1,
-						floating.Value.rotation
+					Floating = (
+						Floating.Value.piece,
+						Floating.Value.x,
+						Floating.Value.y + 1,
+						Floating.Value.rotation
 					);
 				}
 			}
@@ -118,7 +118,7 @@ namespace Polytet.Model
 			{
 				if (nextPieces.Count > 0)
 				{
-					floating = (
+					Floating = (
 						nextPieces.Dequeue(),
 						4,
 						20,
@@ -130,6 +130,28 @@ namespace Polytet.Model
 			playfield.Tick();
 
 			Update?.Invoke(UpdateReason.Tick);
+		}
+
+		public int PreviewDropY()
+		{
+			if (!Floating.HasValue)
+			{
+				throw new InvalidOperationException();
+			}
+
+			int lastValidY = Floating.Value.y;
+			for (int y = Floating.Value.y + 1; y < Playfield.Height; y++)
+			{
+				if (IsValidPositions(GetPositionsOfPiece(y: y)))
+				{
+					lastValidY = y;
+				}
+				else
+				{
+					break;
+				}
+			}
+			return lastValidY;
 		}
 
 		public bool RotateCounterClockwise()
@@ -152,13 +174,13 @@ namespace Polytet.Model
 		}
 		private bool Rotate(int dir)
 		{
-			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: floating.Value.rotation + dir)))
+			if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: Floating.Value.rotation + dir)))
 			{
-				floating = (
-					floating.Value.piece,
-					floating.Value.x,
-					floating.Value.y,
-					floating.Value.rotation + dir
+				Floating = (
+					Floating.Value.piece,
+					Floating.Value.x,
+					Floating.Value.y,
+					Floating.Value.rotation + dir
 				);
 				return true;
 			}
@@ -188,13 +210,13 @@ namespace Polytet.Model
 		}
 		private bool Move(int dir)
 		{
-			if (floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: floating.Value.x + dir)))
+			if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: Floating.Value.x + dir)))
 			{
-				floating = (
-					floating.Value.piece,
-					floating.Value.x + dir,
-					floating.Value.y,
-					floating.Value.rotation
+				Floating = (
+					Floating.Value.piece,
+					Floating.Value.x + dir,
+					Floating.Value.y,
+					Floating.Value.rotation
 				);
 				return true;
 			}
@@ -206,28 +228,16 @@ namespace Polytet.Model
 
 		public bool MoveDown()
 		{
-			if (floating.HasValue)
+			if (Floating.HasValue)
 			{
-				int lastValidY = floating.Value.y;
-				for (int y = floating.Value.y + 1; y < Playfield.Height; y++)
+				int droppedY = PreviewDropY();
+				if (droppedY != Floating.Value.y)
 				{
-					if (IsValidPositions(GetPositionsOfPiece(y: y)))
-					{
-						lastValidY = y;
-					}
-					else
-					{
-						break;
-					}
-				}
-
-				if (lastValidY != floating.Value.y)
-				{
-					floating = (
-						floating.Value.piece,
-						floating.Value.x,
-						lastValidY,
-						floating.Value.rotation
+					Floating = (
+						Floating.Value.piece,
+						Floating.Value.x,
+						droppedY,
+						Floating.Value.rotation
 					);
 
 					Update?.Invoke(UpdateReason.MoveDown);
