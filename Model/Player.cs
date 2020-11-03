@@ -9,6 +9,8 @@ namespace Polytet.Model
 		private readonly Random random;
 		private readonly Timer timer;
 
+		public event Action? GameOver;
+
 		public Player(Game game, int millisecondInterval, Random? random = null)
 		{
 			this.game = game ?? throw new ArgumentNullException(nameof(game));
@@ -30,9 +32,18 @@ namespace Polytet.Model
 
 		private void Timer_Elapsed(object sender, ElapsedEventArgs e)
 		{
-			game.Tick();
+			bool success = game.Tick();
 
-			EnsureHasNextPiece();
+			if (success)
+			{
+				EnsureHasNextPiece();
+			}
+			else
+			{
+				Stop();
+
+				GameOver?.Invoke();
+			}
 		}
 
 		private void EnsureHasNextPiece()

@@ -94,8 +94,10 @@ namespace Polytet.Model
 				playfield[position.x, position.y] == Piece.Empty;
 		}
 
-		public void Tick()
+		public bool Tick()
 		{
+			bool success = true;
+
 			if (Floating.HasValue)
 			{
 				if (PreviewDropY() == Floating.Value.y)
@@ -124,12 +126,16 @@ namespace Polytet.Model
 						20,
 						0
 					);
+
+					success = IsValidPositions(GetPositionsOfPiece());
 				}
 			}
 
 			playfield.Tick();
 
 			Update?.Invoke(UpdateReason.Tick);
+
+			return success;
 		}
 
 		public int PreviewDropY()
