@@ -11,7 +11,19 @@ namespace Polytet.Model
 		public (Piece piece, int x, int y, int rotation)? Floating { get; private set; }
 		private readonly ReaderWriterLockSlim floatingLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
-		public int Score { get; private set; } = 0;
+		private int score = 0;
+		public int Score
+		{
+			get => score;
+			private set
+			{
+				if (score != value)
+				{
+					score = value;
+					Update?.Invoke(UpdateReason.ScoreChange);
+				}
+			}
+		}
 
 		private readonly Queue<Piece> nextPieces = new Queue<Piece>();
 		public Piece? NextPiece => nextPieces.Count > 0 ? (Piece?)nextPieces.Peek() : null;
@@ -388,7 +400,8 @@ namespace Polytet.Model
 			MoveLeft,
 			MoveRight,
 			MoveDown,
-			NewNextPiece
+			NewNextPiece,
+			ScoreChange
 		}
 	}
 }
