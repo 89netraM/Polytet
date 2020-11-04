@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Model", "Model\Model.csproj", "{CDB0BDA8-9E81-4491-9940-8C814F4BA147}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Model", "Model\Model.csproj", "{CDB0BDA8-9E81-4491-9940-8C814F4BA147}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player", "Player\Player.csproj", "{4DB3FC28-83B3-4F83-869C-4617E01C1A66}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{CDB0BDA8-9E81-4491-9940-8C814F4BA147}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CDB0BDA8-9E81-4491-9940-8C814F4BA147}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CDB0BDA8-9E81-4491-9940-8C814F4BA147}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DB3FC28-83B3-4F83-869C-4617E01C1A66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DB3FC28-83B3-4F83-869C-4617E01C1A66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DB3FC28-83B3-4F83-869C-4617E01C1A66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DB3FC28-83B3-4F83-869C-4617E01C1A66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
