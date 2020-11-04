@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Polytet.Model
 {
@@ -8,6 +9,7 @@ namespace Polytet.Model
 	{
 		private Playfield playfield;
 		public (Piece piece, int x, int y, int rotation)? Floating { get; private set; }
+		private readonly ReaderWriterLockSlim floatingLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
 		public int Score { get; private set; } = 0;
 
@@ -22,13 +24,21 @@ namespace Polytet.Model
 
 				if (fromField == Piece.Empty)
 				{
-					if (Floating.HasValue && GetPositionsOfPiece().Any(p => p.x == x && p.y == y))
+					floatingLock.EnterReadLock();
+					try
 					{
-						return Floating.Value.piece;
+						if (Floating.HasValue && GetPositionsOfPiece().Any(p => p.x == x && p.y == y))
+						{
+							return Floating.Value.piece;
+						}
+						else
+						{
+							return Piece.Empty;
+						}
 					}
-					else
+					finally
 					{
-						return Piece.Empty;
+						floatingLock.ExitReadLock();
 					}
 				}
 				else
@@ -54,35 +64,52 @@ namespace Polytet.Model
 			Update?.Invoke(UpdateReason.NewNextPiece);
 		}
 
-		public IEnumerable<(int x, int y)> GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
+		public (int x, int y)[] GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
 		{
-			if (!Floating.HasValue)
+			floatingLock.EnterReadLock();
+			try
 			{
-				throw new InvalidOperationException();
-			}
+				if (!Floating.HasValue)
+				{
+					throw new InvalidOperationException();
+				}
 
-			return Floating.Value.piece
-				.GetOffsets(rotation ?? Floating.Value.rotation)
-				.Select(p => (p.x + (x ?? Floating.Value.x), p.y + (y ?? Floating.Value.y)));
+				return Floating.Value.piece
+					.GetOffsets(rotation ?? Floating.Value.rotation)
+					.Select(p => (p.x + (x ?? Floating.Value.x), p.y + (y ?? Floating.Value.y)))
+					.ToArray();
+			}
+			finally
+			{
+				floatingLock.ExitReadLock();
+			}
 		}
 
 		private void PlacePiece()
 		{
-			if (!Floating.HasValue)
+			floatingLock.EnterReadLock();
+			try
 			{
-				throw new InvalidOperationException();
+				if (!Floating.HasValue)
+				{
+					throw new InvalidOperationException();
+				}
+
+				IEnumerable<(int, int)> positions = GetPositionsOfPiece();
+
+				if (!IsValidPositions(positions))
+				{
+					throw new ArgumentException("Can not place piece there");
+				}
+
+				foreach (var (x, y) in positions)
+				{
+					playfield[x, y] = Floating.Value.piece;
+				}
 			}
-
-			IEnumerable<(int, int)> positions = GetPositionsOfPiece();
-
-			if (!IsValidPositions(positions))
+			finally
 			{
-				throw new ArgumentException("Can not place piece there");
-			}
-
-			foreach (var (x, y) in positions)
-			{
-				playfield[x, y] = Floating.Value.piece;
+				floatingLock.ExitReadLock();
 			}
 		}
 
@@ -100,37 +127,69 @@ namespace Polytet.Model
 		{
 			bool success = true;
 
-			if (Floating.HasValue)
+			floatingLock.EnterUpgradeableReadLock();
+			try
 			{
-				if (PreviewDropY() == Floating.Value.y)
+				if (Floating.HasValue)
 				{
-					PlacePiece();
+					if (PreviewDropY() == Floating.Value.y)
+					{
+						PlacePiece();
 
-					Floating = null;
+						floatingLock.EnterWriteLock();
+						try
+						{
+							Floating = null;
+						}
+						finally
+						{
+							floatingLock.ExitWriteLock();
+						}
+					}
+					else
+					{
+						floatingLock.EnterWriteLock();
+						try
+						{
+							Floating = (
+								Floating.Value.piece,
+								Floating.Value.x,
+								Floating.Value.y + 1,
+								Floating.Value.rotation
+							);
+						}
+						finally
+						{
+							floatingLock.ExitWriteLock();
+						}
+					}
 				}
 				else
 				{
-					Floating = (
-						Floating.Value.piece,
-						Floating.Value.x,
-						Floating.Value.y + 1,
-						Floating.Value.rotation
-					);
+					if (nextPieces.Count > 0)
+					{
+						floatingLock.EnterWriteLock();
+						try
+						{
+							Floating = (
+								nextPieces.Dequeue(),
+								4,
+								20,
+								0
+							);
+						}
+						finally
+						{
+							floatingLock.ExitWriteLock();
+						}
+
+						success = IsValidPositions(GetPositionsOfPiece());
+					}
 				}
 			}
-			else
+			finally
 			{
-				if (nextPieces.Count > 0)
-				{
-					Floating = (
-						nextPieces.Dequeue(),
-						4,
-						20,
-						0
-					);
-
-					success = IsValidPositions(GetPositionsOfPiece());
-				}
+				floatingLock.ExitUpgradeableReadLock();
 			}
 
 			int newPoints = playfield.Tick();
@@ -143,24 +202,32 @@ namespace Polytet.Model
 
 		public int PreviewDropY()
 		{
-			if (!Floating.HasValue)
+			floatingLock.EnterReadLock();
+			try
 			{
-				throw new InvalidOperationException();
-			}
+				if (!Floating.HasValue)
+				{
+					throw new InvalidOperationException();
+				}
 
-			int lastValidY = Floating.Value.y;
-			for (int y = Floating.Value.y + 1; y < Playfield.Height; y++)
-			{
-				if (IsValidPositions(GetPositionsOfPiece(y: y)))
+				int lastValidY = Floating.Value.y;
+				for (int y = Floating.Value.y + 1; y < Playfield.Height; y++)
 				{
-					lastValidY = y;
+					if (IsValidPositions(GetPositionsOfPiece(y: y)))
+					{
+						lastValidY = y;
+					}
+					else
+					{
+						break;
+					}
 				}
-				else
-				{
-					break;
-				}
+				return lastValidY;
 			}
-			return lastValidY;
+			finally
+			{
+				floatingLock.ExitReadLock();
+			}
 		}
 
 		public bool RotateCounterClockwise()
@@ -183,19 +250,36 @@ namespace Polytet.Model
 		}
 		private bool Rotate(int dir)
 		{
-			if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: Floating.Value.rotation + dir)))
+			floatingLock.EnterUpgradeableReadLock();
+			try
 			{
-				Floating = (
-					Floating.Value.piece,
-					Floating.Value.x,
-					Floating.Value.y,
-					Floating.Value.rotation + dir
-				);
-				return true;
+				if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(rotation: Floating.Value.rotation + dir)))
+				{
+					floatingLock.EnterWriteLock();
+
+					try
+					{
+						Floating = (
+							Floating.Value.piece,
+							Floating.Value.x,
+							Floating.Value.y,
+							Floating.Value.rotation + dir
+						);
+						return true;
+					}
+					finally
+					{
+						floatingLock.ExitWriteLock();
+					}
+				}
+				else
+				{
+					return false;
+				}
 			}
-			else
+			finally
 			{
-				return false;
+				floatingLock.ExitUpgradeableReadLock();
 			}
 		}
 
@@ -219,48 +303,80 @@ namespace Polytet.Model
 		}
 		private bool Move(int dir)
 		{
-			if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: Floating.Value.x + dir)))
+			floatingLock.EnterUpgradeableReadLock();
+			try
 			{
-				Floating = (
-					Floating.Value.piece,
-					Floating.Value.x + dir,
-					Floating.Value.y,
-					Floating.Value.rotation
-				);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		public bool MoveDown()
-		{
-			if (Floating.HasValue)
-			{
-				int droppedY = PreviewDropY();
-				if (droppedY != Floating.Value.y)
+				if (Floating.HasValue && IsValidPositions(GetPositionsOfPiece(x: Floating.Value.x + dir)))
 				{
-					Floating = (
-						Floating.Value.piece,
-						Floating.Value.x,
-						droppedY,
-						Floating.Value.rotation
-					);
-
-					Update?.Invoke(UpdateReason.MoveDown);
-
-					return true;
+					floatingLock.EnterWriteLock();
+					try
+					{
+						Floating = (
+							Floating.Value.piece,
+							Floating.Value.x + dir,
+							Floating.Value.y,
+							Floating.Value.rotation
+						);
+						return true;
+					}
+					finally
+					{
+						floatingLock.ExitWriteLock();
+					}
 				}
 				else
 				{
 					return false;
 				}
 			}
-			else
+			finally
 			{
-				return false;
+				floatingLock.ExitUpgradeableReadLock();
+			}
+		}
+
+		public bool MoveDown()
+		{
+			floatingLock.EnterUpgradeableReadLock();
+			try
+			{
+				if (Floating.HasValue)
+				{
+					int droppedY = PreviewDropY();
+					if (droppedY != Floating.Value.y)
+					{
+						floatingLock.EnterWriteLock();
+						try
+						{
+							Floating = (
+								Floating.Value.piece,
+								Floating.Value.x,
+								droppedY,
+								Floating.Value.rotation
+							);
+
+							Update?.Invoke(UpdateReason.MoveDown);
+
+							return true;
+						}
+						finally
+						{
+							floatingLock.ExitWriteLock();
+						}
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					return false;
+				}
+			}
+			finally
+			{
+				floatingLock.ExitUpgradeableReadLock();
 			}
 		}
 
