@@ -7,7 +7,7 @@ namespace Polytet.Player
 {
 	using Model;
 
-	class GameComponent : Component<EmptyState>
+	class GameComponent : Component<GameState>
 	{
 		private static uint MainColumn(Side side) => side switch
 		{
@@ -46,21 +46,31 @@ namespace Polytet.Player
 			_ => throw new NotImplementedException(),
 		};
 
-		private readonly Side side;
-
 		private readonly Game game;
 		private readonly Player player;
 
-		public GameComponent(Side side) : base()
+		public GameComponent(Side side) : base(new GameState(side))
 		{
-			this.side = side;
-
 			game = new Game();
+			game.Update += Game_Update;
 
 			player = new Player(game, 1000);
 			player.GameOver += Player_GameOver;
 
 			player.Start();
+		}
+
+		private void Game_Update(Game.UpdateReason reason)
+		{
+			if (reason == Game.UpdateReason.ScoreChange)
+			{
+				State = new GameState(State.Side switch
+				{
+					Side.Left => Side.Right,
+					Side.Right => Side.Left,
+					_ => throw new NotImplementedException()
+				});
+			}
 		}
 
 		private void Player_GameOver()
@@ -73,13 +83,13 @@ namespace Polytet.Player
 		{
 			return new Buffer
 			{
-				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game)) },
-				{ new Area(0, SidebarColumn(side), 4, 12), new BorderComponent(new NextPieceComponent(game)) },
-				{ new Area(3, SidebarColumn(side), 4, 12), new BorderComponent(new ScoreComponent(game)) },
-				{ new Area(0, CenterColumn(side), 1, 1), '╦' },
-				{ new Area(3, CenterColumn(side), 1, 1), InnerConector(side) },
-				{ new Area(3, SidebarOuterColumn(side), 1, 1), OuterConector(side) },
-				{ new Area(6, CenterColumn(side), 1, 1), InnerConector(side) }
+				{ new Area(0, MainColumn(State.Side), 22, 22), new BorderComponent(new PlayComponent(game)) },
+				{ new Area(0, SidebarColumn(State.Side), 4, 12), new BorderComponent(new NextPieceComponent(game)) },
+				{ new Area(3, SidebarColumn(State.Side), 4, 12), new BorderComponent(new ScoreComponent(game)) },
+				{ new Area(0, CenterColumn(State.Side), 1, 1), '╦' },
+				{ new Area(3, CenterColumn(State.Side), 1, 1), InnerConector(State.Side) },
+				{ new Area(3, SidebarOuterColumn(State.Side), 1, 1), OuterConector(State.Side) },
+				{ new Area(6, CenterColumn(State.Side), 1, 1), InnerConector(State.Side) }
 			};
 		}
 
@@ -92,6 +102,16 @@ namespace Polytet.Player
 		{
 			Left,
 			Right
+		}
+	}
+
+	readonly struct GameState
+	{
+		public GameComponent.Side Side { get; }
+
+		public GameState(GameComponent.Side side)
+		{
+			Side = side;
 		}
 	}
 }
