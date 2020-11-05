@@ -73,7 +73,10 @@ namespace Polytet.Model
 		public void AddCommingPiece(Piece piece)
 		{
 			nextPieces.Enqueue(piece);
-			Update?.Invoke(UpdateReason.NewNextPiece);
+			if (nextPieces.Count == 1)
+			{
+				Update?.Invoke(UpdateReason.NextPieceChange);
+			}
 		}
 
 		public (int x, int y)[] GetPositionsOfPiece(int? rotation = null, int? x = null, int? y = null)
@@ -194,6 +197,8 @@ namespace Polytet.Model
 						{
 							floatingLock.ExitWriteLock();
 						}
+
+						Update?.Invoke(UpdateReason.NextPieceChange);
 
 						success = IsValidPositions(GetPositionsOfPiece());
 					}
@@ -400,7 +405,7 @@ namespace Polytet.Model
 			MoveLeft,
 			MoveRight,
 			MoveDown,
-			NewNextPiece,
+			NextPieceChange,
 			ScoreChange
 		}
 	}
