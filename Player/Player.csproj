@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ConsoleElmish" Version="1.2.6" />
+		<PackageReference Include="ConsoleElmish" Version="1.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>

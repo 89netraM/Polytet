@@ -34,8 +34,11 @@ namespace Polytet.Player
 			{
 				{ new Area(0, 0, 22, 22), new BorderComponent(new PlayComponent(game)) },
 				{ new Area(0, 21, 4, 12), new BorderComponent(new NextPieceComponent(game)) },
+				{ new Area(3, 21, 4, 12), new BorderComponent(new ScoreComponent(game)) },
 				{ new Area(0, 21, 1, 1), '╦' },
-				{ new Area(3, 21, 1, 1), '╠' }
+				{ new Area(3, 21, 1, 1), '╠' },
+				{ new Area(3, 32, 1, 1), '╣' },
+				{ new Area(6, 21, 1, 1), '╠' }
 			};
 		}
 
