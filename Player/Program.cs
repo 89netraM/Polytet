@@ -10,7 +10,7 @@ namespace Polytet.Player
 		private const int Width = 34;
 		private const int Height = 22;
 
-		public static Task Main()
+		public static Task Main(string[] args)
 		{
 			if (Console.WindowHeight < Height || Console.WindowWidth < Width)
 			{
@@ -30,9 +30,27 @@ namespace Polytet.Player
 					Environment.Exit(0);
 				};
 
-				renderer.Render(new GameComponent());
+				renderer.Render(new GameComponent(GetSide(args)));
 
 				return Task.Delay(-1);
+			}
+		}
+
+		private static GameComponent.Side GetSide(string[] args)
+		{
+			if (args.Length == 0)
+			{
+				return GameComponent.Side.Left;
+			}
+			else if (args.Length == 1 && Enum.TryParse(Char.ToUpper(args[0][0]) + args[0][1..].ToLower(), out GameComponent.Side side))
+			{
+				return side;
+			}
+			else
+			{
+				Console.WriteLine("Provide no argument or Left|Right");
+				Environment.Exit(-1);
+				return (GameComponent.Side)2;
 			}
 		}
 	}

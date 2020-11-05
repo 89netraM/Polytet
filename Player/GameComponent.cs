@@ -9,11 +9,52 @@ namespace Polytet.Player
 
 	class GameComponent : Component<EmptyState>
 	{
+		private static uint MainColumn(Side side) => side switch
+		{
+			Side.Left => 0,
+			Side.Right => 11,
+			_ => throw new NotImplementedException()
+		};
+		private static uint SidebarColumn(Side side) => side switch
+		{
+			Side.Left => 21,
+			Side.Right => 0,
+			_ => throw new NotImplementedException(),
+		};
+		private static uint CenterColumn(Side side) => side switch
+		{
+			Side.Left => SidebarColumn(side),
+			Side.Right => MainColumn(side),
+			_ => throw new NotImplementedException(),
+		};
+		private static uint SidebarOuterColumn(Side side) => side switch
+		{
+			Side.Left => 32,
+			Side.Right => 0,
+			_ => throw new NotImplementedException(),
+		};
+		private static char InnerConector(Side side) => side switch
+		{
+			Side.Left => '╠',
+			Side.Right => '╣',
+			_ => throw new NotImplementedException(),
+		};
+		private static char OuterConector(Side side) => side switch
+		{
+			Side.Left => '╣',
+			Side.Right => '╠',
+			_ => throw new NotImplementedException(),
+		};
+
+		private readonly Side side;
+
 		private readonly Game game;
 		private readonly Player player;
 
-		public GameComponent() : base()
+		public GameComponent(Side side) : base()
 		{
+			this.side = side;
+
 			game = new Game();
 
 			player = new Player(game, 1000);
@@ -32,19 +73,25 @@ namespace Polytet.Player
 		{
 			return new Buffer
 			{
-				{ new Area(0, 0, 22, 22), new BorderComponent(new PlayComponent(game)) },
-				{ new Area(0, 21, 4, 12), new BorderComponent(new NextPieceComponent(game)) },
-				{ new Area(3, 21, 4, 12), new BorderComponent(new ScoreComponent(game)) },
-				{ new Area(0, 21, 1, 1), '╦' },
-				{ new Area(3, 21, 1, 1), '╠' },
-				{ new Area(3, 32, 1, 1), '╣' },
-				{ new Area(6, 21, 1, 1), '╠' }
+				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game)) },
+				{ new Area(0, SidebarColumn(side), 4, 12), new BorderComponent(new NextPieceComponent(game)) },
+				{ new Area(3, SidebarColumn(side), 4, 12), new BorderComponent(new ScoreComponent(game)) },
+				{ new Area(0, CenterColumn(side), 1, 1), '╦' },
+				{ new Area(3, CenterColumn(side), 1, 1), InnerConector(side) },
+				{ new Area(3, SidebarOuterColumn(side), 1, 1), OuterConector(side) },
+				{ new Area(6, CenterColumn(side), 1, 1), InnerConector(side) }
 			};
 		}
 
 		public override void Dispose()
 		{
 			player.GameOver -= Player_GameOver;
+		}
+
+		public enum Side
+		{
+			Left,
+			Right
 		}
 	}
 }
