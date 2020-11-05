@@ -18,6 +18,8 @@ namespace Polytet.Player
 
 			player = new Player(game, 1000);
 			player.GameOver += Player_GameOver;
+
+			player.Start();
 		}
 
 		private void Player_GameOver()
@@ -28,13 +30,18 @@ namespace Polytet.Player
 
 		public override Buffer Render(uint height, uint width)
 		{
-			player.Start();
-
 			return new Buffer
 			{
-				{ new Area(0, 0, height, width), new BorderComponent(new PlayComponent(game)) },
-				{ new Area(0, 0, 1, width), new TextComponent("Polytet", true) }
+				{ new Area(0, 0, 22, 22), new BorderComponent(new PlayComponent(game)) },
+				{ new Area(0, 21, 4, 12), new BorderComponent(new NextPieceComponent(game)) },
+				{ new Area(0, 21, 1, 1), '╦' },
+				{ new Area(3, 21, 1, 1), '╠' }
 			};
+		}
+
+		public override void Dispose()
+		{
+			player.GameOver -= Player_GameOver;
 		}
 	}
 }

@@ -8,7 +8,7 @@ namespace Polytet.Player
 {
 	class PlayComponent : Component<EmptyState>
 	{
-		private static readonly IReadOnlyDictionary<Piece, ConsoleColor> pieceColorMap = new Dictionary<Piece, ConsoleColor>
+		public static IReadOnlyDictionary<Piece, ConsoleColor> PieceColorMap { get; } = new Dictionary<Piece, ConsoleColor>
 		{
 			{ Piece.I, ConsoleColor.Cyan },
 			{ Piece.J, ConsoleColor.DarkBlue },
@@ -87,8 +87,8 @@ namespace Polytet.Player
 				{
 					foreach (var (x, y) in game.GetPositionsOfPiece(y: game.PreviewDropY()))
 					{
-						buffer[((uint)y - 20, (uint)x * 2)] = '\u2591'.WithColors(foreground: pieceColorMap[game.Floating.Value.piece]);
-						buffer[((uint)y - 20, (uint)x * 2 + 1)] = '\u2591'.WithColors(foreground: pieceColorMap[game.Floating.Value.piece]);
+						buffer[((uint)y - 20, (uint)x * 2)] = '\u2591'.WithColors(foreground: PieceColorMap[game.Floating.Value.piece]);
+						buffer[((uint)y - 20, (uint)x * 2 + 1)] = '\u2591'.WithColors(foreground: PieceColorMap[game.Floating.Value.piece]);
 					}
 				} catch { }
 			}
@@ -100,8 +100,8 @@ namespace Polytet.Player
 					Piece piece = game[x, y + 20];
 					if (piece != Piece.Empty)
 					{
-						buffer[((uint)y, (uint)x * 2)] = '█'.WithColors(foreground: pieceColorMap[piece]);
-						buffer[((uint)y, (uint)x * 2 + 1)] = '█'.WithColors(foreground: pieceColorMap[piece]);
+						buffer[((uint)y, (uint)x * 2)] = '█'.WithColors(foreground: PieceColorMap[piece]);
+						buffer[((uint)y, (uint)x * 2 + 1)] = '█'.WithColors(foreground: PieceColorMap[piece]);
 					}
 				}
 			}

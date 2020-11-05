@@ -7,14 +7,14 @@ namespace Polytet.Player
 {
 	public static class Program
 	{
-		private const int Width = 22;
+		private const int Width = 34;
 		private const int Height = 22;
 
 		public static Task Main()
 		{
 			if (Console.WindowHeight < Height || Console.WindowWidth < Width)
 			{
-				Console.WriteLine("Window size must be at least 22x22");
+				Console.WriteLine($"Window size must be at least {Height}x{Width}");
 				return Task.CompletedTask;
 			}
 			else
