@@ -33,5 +33,10 @@ namespace Polytet.Player
 				{ new Area(1, 0, 1, width), new TextComponent(game.Score.ToString(), TextComponent.Alignment.Right) }
 			};
 		}
+
+		public override void Dispose()
+		{
+			game.Update -= Game_Update;
+		}
 	}
 }

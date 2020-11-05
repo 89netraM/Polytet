@@ -108,5 +108,12 @@ namespace Polytet.Player
 
 			return buffer;
 		}
+
+		public override void Dispose()
+		{
+			game.Update -= Game_Update;
+
+			Input.KeyDown -= Input_KeyDown;
+		}
 	}
 }
