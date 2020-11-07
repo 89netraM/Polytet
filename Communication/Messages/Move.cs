@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Polytet.Communication.Messages
 {
-	[Header(0b_1000_0101, MessageSender.Server)]
+	[Header(0b_1000_0101, MessageReceiver.Client)]
 	public readonly struct MoveServer : IMessage
 	{
 		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize)
@@ -44,7 +44,7 @@ namespace Polytet.Communication.Messages
 		}
 	}
 
-	[Header(0b_1000_0101, MessageSender.Client)]
+	[Header(0b_1000_0101, MessageReceiver.Server)]
 	public readonly struct MoveClient : IMessage
 	{
 		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize)

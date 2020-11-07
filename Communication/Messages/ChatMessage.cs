@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Polytet.Communication.Messages
 {
-	[Header(0b_0000_0000, MessageSender.Client)]
+	[Header(0b_0000_0000, MessageReceiver.Client)]
 	public readonly struct ChatMessageClient : IMessage
 	{
 		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize)

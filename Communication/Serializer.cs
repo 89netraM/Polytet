@@ -9,14 +9,14 @@ namespace Polytet.Communication
 	{
 		private delegate IMessage DeSerializer(byte[] message, byte playerIntegerSize);
 
-		private static readonly Lazy<IReadOnlyDictionary<(byte, MessageSender), DeSerializer>> messageTypes = new Lazy<IReadOnlyDictionary<(byte, MessageSender), DeSerializer>>(PopulateMessageTypes);
+		private static readonly Lazy<IReadOnlyDictionary<(byte, MessageReceiver), DeSerializer>> messageTypes = new Lazy<IReadOnlyDictionary<(byte, MessageReceiver), DeSerializer>>(PopulateMessageTypes);
 
-		private static IReadOnlyDictionary<(byte, MessageSender), DeSerializer> PopulateMessageTypes()
+		private static IReadOnlyDictionary<(byte, MessageReceiver), DeSerializer> PopulateMessageTypes()
 		{
 			Assembly assembly = Assembly.GetExecutingAssembly();
 			return assembly.GetTypes().SelectMany(SearchForHeader).Where(t => t.isValid).ToDictionary(t => t.header, t => t.deserializer);
 
-			static IEnumerable<(bool isValid, (byte, MessageSender) header, DeSerializer deserializer)> SearchForHeader(Type t)
+			static IEnumerable<(bool isValid, (byte, MessageReceiver) header, DeSerializer deserializer)> SearchForHeader(Type t)
 			{
 				foreach (HeaderAttribute header in Attribute.GetCustomAttributes(t, typeof(HeaderAttribute)))
 				{
@@ -64,11 +64,27 @@ namespace Polytet.Communication
 			return all;
 		}
 
-		public static IMessage DeSerializeServer(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageSender.Server);
-		public static IMessage DeSerializeClient(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageSender.Client);
-		private static IMessage DeSerialize(byte[] message, byte playerIntegerSize, MessageSender sender)
+		public static MessageReceiver IntendedReceiver(byte[] message)
 		{
-			if (messageTypes.Value.TryGetValue((message[0], sender), out DeSerializer deserializer))
+			if (message.Length == 0)
+			{
+				return MessageReceiver.Unknown;
+			}
+			else if ((message[0] & 0b_1000_000) == 0)
+			{
+				return MessageReceiver.Client;
+			}
+			else
+			{
+				return MessageReceiver.Server;
+			}
+		}
+
+		public static IMessage DeSerializeServer(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageReceiver.Server);
+		public static IMessage DeSerializeClient(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageReceiver.Client);
+		private static IMessage DeSerialize(byte[] message, byte playerIntegerSize, MessageReceiver receiver)
+		{
+			if (messageTypes.Value.TryGetValue((message[0], receiver), out DeSerializer deserializer))
 			{
 				byte[] body = new byte[message.Length - 1];
 				Array.Copy(message, 1, body, 0, body.Length);

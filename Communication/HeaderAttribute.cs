@@ -6,22 +6,24 @@ namespace Polytet.Communication
 	class HeaderAttribute : Attribute
 	{
 		public byte HeaderCode { get; }
-		public MessageSender From { get; }
+		internal MessageReceiver From { get; }
 
-		public HeaderAttribute(byte headerCode, MessageSender from)
+		public HeaderAttribute(byte headerCode) : this(headerCode, MessageReceiver.Unknown) { }
+		internal HeaderAttribute(byte headerCode, MessageReceiver from)
 		{
 			HeaderCode = headerCode;
 			From = from;
 		}
 
-		public static implicit operator ValueTuple<byte, MessageSender>(HeaderAttribute header)
+		public static implicit operator ValueTuple<byte, MessageReceiver>(HeaderAttribute header)
 		{
 			return (header.HeaderCode, header.From);
 		}
 	}
 
-	enum MessageSender
+	public enum MessageReceiver
 	{
+		Unknown,
 		Server,
 		Client
 	}

@@ -17,7 +17,7 @@ namespace Communication.UnitTests
 			ConnectServer connect = new ConnectServer(true, playerIntegerSize, 0, 1);
 
 			byte[] bytes = Serializer.Serialize(connect, 0);
-			ConnectServer message = (ConnectServer)Serializer.DeSerializeServer(bytes, 0);
+			ConnectServer message = (ConnectServer)Serializer.DeSerializeClient(bytes, 0);
 
 			Assert.AreEqual(connect, message, "Should be able to serialize and deserialize the connect server message.");
 		}
@@ -28,7 +28,7 @@ namespace Communication.UnitTests
 			ConnectClient connect = new ConnectClient();
 
 			byte[] bytes = Serializer.Serialize(connect, 0);
-			ConnectClient message = (ConnectClient)Serializer.DeSerializeClient(bytes, 0);
+			ConnectClient message = (ConnectClient)Serializer.DeSerializeServer(bytes, 0);
 
 			Assert.AreEqual(connect, message, "Should be able to serialize and deserialize the connect client message.");
 		}
@@ -39,7 +39,7 @@ namespace Communication.UnitTests
 			PeerConnectedServer peerConnected = new PeerConnectedServer(true, 2, 1);
 
 			byte[] bytes = Serializer.Serialize(peerConnected, playerIntegerSize);
-			PeerConnectedServer message = (PeerConnectedServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			PeerConnectedServer message = (PeerConnectedServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(peerConnected, message, "Should be able to serialize and deserialize the peer connected server message.");
 		}
@@ -50,11 +50,11 @@ namespace Communication.UnitTests
 			StartGame startGame = new StartGame();
 
 			byte[] bytes = Serializer.Serialize(startGame, playerIntegerSize);
-			StartGame messageServer = (StartGame)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			StartGame messageServer = (StartGame)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(startGame, messageServer, "Should be able to serialize and deserialize the start game server message.");
 
-			StartGame messageClient = (StartGame)Serializer.DeSerializeClient(bytes, playerIntegerSize);
+			StartGame messageClient = (StartGame)Serializer.DeSerializeServer(bytes, playerIntegerSize);
 
 			Assert.AreEqual(startGame, messageClient, "Should be able to serialize and deserialize the start game client message.");
 		}
@@ -65,7 +65,7 @@ namespace Communication.UnitTests
 			NextPieceServer nextPiece = new NextPieceServer(0, Piece.I);
 
 			byte[] bytes = Serializer.Serialize(nextPiece, playerIntegerSize);
-			NextPieceServer message = (NextPieceServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			NextPieceServer message = (NextPieceServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(nextPiece, message, "Should be able to serialize and deserialize the next piece server message.");
 		}
@@ -76,7 +76,7 @@ namespace Communication.UnitTests
 			TickServer tick = new TickServer();
 
 			byte[] bytes = Serializer.Serialize(tick, playerIntegerSize);
-			TickServer message = (TickServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			TickServer message = (TickServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(tick, message, "Should be able to serialize and deserialize the tick server message.");
 		}
@@ -87,7 +87,7 @@ namespace Communication.UnitTests
 			MoveServer move = new MoveServer(0, Move.NotAllowed);
 
 			byte[] bytes = Serializer.Serialize(move, playerIntegerSize);
-			MoveServer message = (MoveServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			MoveServer message = (MoveServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(move, message, "Should be able to serialize and deserialize the move server message.");
 		}
@@ -98,7 +98,7 @@ namespace Communication.UnitTests
 			MoveClient move = new MoveClient(Move.MoveRight);
 
 			byte[] bytes = Serializer.Serialize(move, playerIntegerSize);
-			MoveClient message = (MoveClient)Serializer.DeSerializeClient(bytes, playerIntegerSize);
+			MoveClient message = (MoveClient)Serializer.DeSerializeServer(bytes, playerIntegerSize);
 
 			Assert.AreEqual(move, message, "Should be able to serialize and deserialize the move client message.");
 		}
@@ -109,7 +109,7 @@ namespace Communication.UnitTests
 			PointsUpdateServer pointsUpdate = new PointsUpdateServer(0, 1200);
 
 			byte[] bytes = Serializer.Serialize(pointsUpdate, playerIntegerSize);
-			PointsUpdateServer message = (PointsUpdateServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			PointsUpdateServer message = (PointsUpdateServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.AreEqual(pointsUpdate, message, "Should be able to serialize and deserialize the points update server message.");
 		}
@@ -128,7 +128,7 @@ namespace Communication.UnitTests
 			StateUpdateServer stateUpdate = StateUpdateServer.CreateState(0, game);
 
 			byte[] bytes = Serializer.Serialize(stateUpdate, playerIntegerSize);
-			StateUpdateServer message = (StateUpdateServer)Serializer.DeSerializeServer(bytes, playerIntegerSize);
+			StateUpdateServer message = (StateUpdateServer)Serializer.DeSerializeClient(bytes, playerIntegerSize);
 
 			Assert.IsTrue(AreStateUpdatesEqual(stateUpdate, message), "Should be able to serialize and deserialize the state update server message.");
 
@@ -151,7 +151,7 @@ namespace Communication.UnitTests
 			StateUpdateClient stateUpdate = new StateUpdateClient(1);
 
 			byte[] bytes = Serializer.Serialize(stateUpdate, playerIntegerSize);
-			StateUpdateClient message = (StateUpdateClient)Serializer.DeSerializeClient(bytes, playerIntegerSize);
+			StateUpdateClient message = (StateUpdateClient)Serializer.DeSerializeServer(bytes, playerIntegerSize);
 
 			Assert.AreEqual(stateUpdate, message, "Should be able to serialize and deserialize the state update client message.");
 		}

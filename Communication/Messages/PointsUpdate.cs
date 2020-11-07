@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace Polytet.Communication.Messages
 {
-	[Header(0b_1000_0110, MessageSender.Server)]
+	[Header(0b_1000_0110, MessageReceiver.Client)]
 	public readonly struct PointsUpdateServer : IMessage
 	{
 		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize)
