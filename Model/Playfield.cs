@@ -162,5 +162,12 @@ namespace Polytet.Model
 
 			return true;
 		}
+
+		public byte[] CloneArray()
+		{
+			byte[] array = new byte[this.array.Length];
+			this.array.CopyTo(array, 0);
+			return array;
+		}
 	}
 }

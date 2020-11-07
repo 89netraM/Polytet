@@ -62,12 +62,12 @@ namespace Polytet.Model
 
 		public event Action<UpdateReason>? Update;
 
-		public Game() : this(Playfield.CreateEmpty()) { }
-		public Game(byte[] playfield) : this(Playfield.CreateFromSource(playfield)) { }
-		private Game(Playfield playfield)
+		public Game() : this(Playfield.CreateEmpty(), null) { }
+		public Game(byte[] playfield, (Piece piece, int x, int y, int rotation)? floating) : this(Playfield.CreateFromSource(playfield), floating) { }
+		private Game(Playfield playfield, (Piece piece, int x, int y, int rotation)? floating)
 		{
 			this.playfield = playfield;
-			Floating = null;
+			Floating = floating;
 		}
 
 		public void AddCommingPiece(Piece piece)
@@ -395,6 +395,11 @@ namespace Polytet.Model
 			{
 				floatingLock.ExitUpgradeableReadLock();
 			}
+		}
+
+		public byte[] ClonePlayField()
+		{
+			return playfield.CloneArray();
 		}
 
 		public enum UpdateReason
