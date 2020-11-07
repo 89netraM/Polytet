@@ -18,7 +18,7 @@ namespace Polytet.Communication
 
 		public TCPMessagePasser(NetworkStream networkStream, object reactor)
 		{
-			this.networkStream = networkStream;
+			this.networkStream = networkStream ?? throw new ArgumentNullException(nameof(networkStream));
 			messageTypes = FindReactorMethods(reactor);
 
 			static IReadOnlyDictionary<byte, React> FindReactorMethods(object reactor)
