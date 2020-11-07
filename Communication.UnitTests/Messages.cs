@@ -1,10 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Polytet.Communication;
 using Polytet.Communication.Messages;
 using Polytet.Model;
 using System.Linq;
 
-namespace Communication.UnitTests
+namespace Polytet.Communication.UnitTests
 {
 	[TestClass]
 	public class Messages

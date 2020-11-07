@@ -84,7 +84,7 @@ namespace Polytet.Communication
 		public static IMessage DeSerializeClient(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageReceiver.Client);
 		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize, MessageReceiver receiver)
 		{
-			if (messageTypes.Value.TryGetValue((message[0], receiver), out DeSerializer deserializer))
+			if (message.Length > 0 && messageTypes.Value.TryGetValue((message[0], receiver), out DeSerializer deserializer))
 			{
 				byte[] body = new byte[message.Length - 1];
 				Array.Copy(message, 1, body, 0, body.Length);

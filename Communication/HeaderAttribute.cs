@@ -2,8 +2,8 @@
 
 namespace Polytet.Communication
 {
-	[AttributeUsage(AttributeTargets.Struct, AllowMultiple = true)]
-	class HeaderAttribute : Attribute
+	[AttributeUsage(AttributeTargets.Struct | AttributeTargets.Method, AllowMultiple = true)]
+	public class HeaderAttribute : Attribute
 	{
 		public byte HeaderCode { get; }
 		internal MessageReceiver From { get; }
