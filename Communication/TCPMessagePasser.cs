@@ -15,11 +15,13 @@ namespace Polytet.Communication
 		public byte PlayerIntegerSize { get; set; } = 0;
 		private readonly NetworkStream networkStream;
 		private readonly IReadOnlyDictionary<byte, React> messageTypes;
+		private readonly Action<byte[]> defaultReaction;
 
-		public TCPMessagePasser(NetworkStream networkStream, object reactor)
+		public TCPMessagePasser(NetworkStream networkStream, IReactor reactor)
 		{
 			this.networkStream = networkStream ?? throw new ArgumentNullException(nameof(networkStream));
 			messageTypes = FindReactorMethods(reactor);
+			defaultReaction = reactor.DefaultReaction;
 
 			static IReadOnlyDictionary<byte, React> FindReactorMethods(object reactor)
 			{
@@ -69,12 +71,19 @@ namespace Polytet.Communication
 				i += length;
 			}
 
-			IMessage message = Serializer.DeSerialize(bytes, PlayerIntegerSize, receiver);
-
-			if (messageTypes.TryGetValue(bytes[0], out React value))
+			try
 			{
-				value(message);
+				IMessage message = Serializer.DeSerialize(bytes, PlayerIntegerSize, receiver);
+
+				if (messageTypes.TryGetValue(bytes[0], out React value))
+				{
+					value(message);
+					return;
+				}
 			}
+			catch { }
+
+			defaultReaction(bytes);
 		}
 	}
 }

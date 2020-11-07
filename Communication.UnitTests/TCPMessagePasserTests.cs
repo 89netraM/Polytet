@@ -65,12 +65,38 @@ namespace Polytet.Communication.UnitTests
 
 			Assert.IsTrue(new[] { message }.SequenceEqual(reactor.Log), "Should receive the same message as was sent even if it's longer than the buffer.");
 		}
+
+		[TestMethod]
+		[ExpectedException(typeof(NotImplementedException), "Expected DefaultReaction to be called")]
+		public async Task ReactToUnknownMessages()
+		{
+			IMessage message = new TickServer();
+
+			TcpListener listener = new TcpListener(endPoint);
+			listener.Start();
+			Task<TcpClient> receiverTask = listener.AcceptTcpClientAsync();
+
+			using TcpClient sender = new TcpClient();
+			sender.Connect(endPoint);
+			sender.GetStream().Write(Serializer.Serialize(message, playerIntegerSize));
+			sender.Close();
+
+			using TcpClient receiver = await receiverTask;
+			listener.Stop();
+			Reactor reactor = new Reactor();
+			TCPMessagePasser messagePasser = new TCPMessagePasser(receiver.GetStream(), reactor);
+			messagePasser.PlayerIntegerSize = playerIntegerSize;
+
+			messagePasser.ListenAndReactServer();
+		}
 	}
 
-	class Reactor
+	class Reactor : IReactor
 	{
 		private readonly ICollection<IMessage> log = new List<IMessage>();
 		public IEnumerable<IMessage> Log => log;
+
+		public void DefaultReaction(byte[] bytes) => throw new NotImplementedException($"{nameof(DefaultReaction)} was called");
 
 		[Header(0b_0000_0000)]
 		public void ReceiveChatMessage(ChatMessageClient message)
