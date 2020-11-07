@@ -7,7 +7,7 @@ namespace Polytet.Communication
 	public class TCPMessageSender
 	{
 		public byte PlayerIntegerSize { get; set; } = 0;
-		private readonly ConcurrentQueue<IMessage> messages = new ConcurrentQueue<IMessage>();
+		private readonly ConcurrentQueue<byte[]> messages = new ConcurrentQueue<byte[]>();
 		private readonly NetworkStream networkStream;
 
 		public TCPMessageSender(NetworkStream networkStream)
@@ -17,13 +17,13 @@ namespace Polytet.Communication
 
 		public void SendOneMessage()
 		{
-			IMessage message;
-			while (!messages.TryDequeue(out message));
+			byte[] bytes;
+			while (!messages.TryDequeue(out bytes));
 
-			byte[] bytes = Serializer.Serialize(message, PlayerIntegerSize);
 			networkStream.Write(bytes, 0, bytes.Length);
 		}
 
-		public void QueueMessage(IMessage message) => messages.Enqueue(message);
+		public void QueueMessage(IMessage message) => QueueRawMessage(Serializer.Serialize(message, PlayerIntegerSize));
+		public void QueueRawMessage(byte[] bytes) => messages.Enqueue(bytes);
 	}
 }
