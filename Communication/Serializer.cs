@@ -14,9 +14,9 @@ namespace Polytet.Communication
 		private static IReadOnlyDictionary<(byte, MessageReceiver), DeSerializer> PopulateMessageTypes()
 		{
 			Assembly assembly = Assembly.GetExecutingAssembly();
-			return assembly.GetTypes().SelectMany(SearchForHeader).Where(t => t.isValid).ToDictionary(t => t.header, t => t.deserializer);
+			return assembly.GetTypes().SelectMany(SearchForHeader).ToDictionary(t => t.header, t => t.deserializer);
 
-			static IEnumerable<(bool isValid, (byte, MessageReceiver) header, DeSerializer deserializer)> SearchForHeader(Type t)
+			static IEnumerable<((byte, MessageReceiver) header, DeSerializer deserializer)> SearchForHeader(Type t)
 			{
 				foreach (HeaderAttribute header in Attribute.GetCustomAttributes(t, typeof(HeaderAttribute)))
 				{
@@ -32,7 +32,7 @@ namespace Polytet.Communication
 
 					if (!(deserializer is null))
 					{
-						yield return (true, header, deserializer);
+						yield return (header, deserializer);
 					}
 				}
 
@@ -82,7 +82,7 @@ namespace Polytet.Communication
 
 		public static IMessage DeSerializeServer(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageReceiver.Server);
 		public static IMessage DeSerializeClient(byte[] message, byte playerIntegerSize) => DeSerialize(message, playerIntegerSize, MessageReceiver.Client);
-		private static IMessage DeSerialize(byte[] message, byte playerIntegerSize, MessageReceiver receiver)
+		internal static IMessage DeSerialize(byte[] message, byte playerIntegerSize, MessageReceiver receiver)
 		{
 			if (messageTypes.Value.TryGetValue((message[0], receiver), out DeSerializer deserializer))
 			{
