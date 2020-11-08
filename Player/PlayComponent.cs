@@ -3,6 +3,7 @@ using ConsoleElmish;
 using Polytet.Model;
 using System;
 using System.Collections.Generic;
+using Polytet.Communication.Messages;
 
 namespace Polytet.Player
 {
@@ -21,14 +22,17 @@ namespace Polytet.Player
 
 		private readonly Game game;
 		public bool ShouldAcceptInput { get; }
+		private readonly Action<Move>? makeMove;
 
-		public PlayComponent(Game game, bool shouldAcceptInput) : base()
+		public PlayComponent(Game game, bool shouldAcceptInput, Action<Move>? makeMove) : base()
 		{
 			this.game = game ?? throw new ArgumentNullException(nameof(game));
 
 			this.game.Update += Game_Update;
 
 			ShouldAcceptInput = shouldAcceptInput;
+
+			this.makeMove = makeMove;
 
 			Input.KeyDown += Input_KeyDown;
 			Input.Start();
@@ -42,23 +46,23 @@ namespace Polytet.Player
 				{
 					case ConsoleKey.LeftArrow:
 					case ConsoleKey.A:
-						game.MoveLeft();
+						makeMove?.Invoke(Move.MoveLeft);
 						break;
 					case ConsoleKey.RightArrow:
 					case ConsoleKey.D:
-						game.MoveRight();
+						makeMove?.Invoke(Move.MoveRight);
 						break;
 					case ConsoleKey.DownArrow:
 					case ConsoleKey.S:
-						game.MoveDown();
+						makeMove?.Invoke(Move.MoveDown);
 						break;
 					case ConsoleKey.OemComma:
 					case ConsoleKey.Q:
-						game.RotateCounterClockwise();
+						makeMove?.Invoke(Move.RotateCounterClockwise);
 						break;
 					case ConsoleKey.OemPeriod:
 					case ConsoleKey.E:
-						game.RotateClockwise();
+						makeMove?.Invoke(Move.RotateClockwise);
 						break;
 					default:
 						break;

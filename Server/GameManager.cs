@@ -3,7 +3,7 @@ using Polytet.Communication;
 using Polytet.Communication.Messages;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
@@ -21,7 +21,7 @@ namespace Polytet.Server
 		private readonly IConsole console;
 
 		private readonly ReaderWriterLockSlim gamerRights = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-		private readonly IDictionary<EndPoint, (BigInteger id, TCPMessageSender messageSender)> gamers = new Dictionary<EndPoint, (BigInteger, TCPMessageSender)>();
+		private readonly IDictionary<EndPoint, (BigInteger id, ClientHandler handler)> gamers = new Dictionary<EndPoint, (BigInteger, ClientHandler)>();
 
 		public GameManager(IConsole console)
 		{
@@ -33,49 +33,64 @@ namespace Polytet.Server
 			NetworkStream ns = client.GetStream();
 			TCPMessageSender messageSender = new TCPMessageSender(ns);
 			messageSender.PlayerIntegerSize = PlayerIntegerSize;
-			MessageReactor reactor = new MessageReactor(console);
-			TCPMessagePasser messagePasser = new TCPMessagePasser(ns, reactor);
+			ClientHandler handler = new ClientHandler(console, messageSender, GetStateOf);
+			TCPMessagePasser messagePasser = new TCPMessagePasser(ns, handler);
 			messagePasser.PlayerIntegerSize = PlayerIntegerSize;
 
-			reactor.Connect += Connect;
+			handler.Connect += Connect;
 			Task.Run(Listen);
 
 			void Connect()
 			{
-				Debug.WriteLine("1");
 				gamerRights.EnterUpgradeableReadLock();
-				if (gamers.Count + 1 < byte.MaxValue)
+				try
 				{
-					Debug.WriteLine("2");
-					BigInteger id = gamers.Count;
-					gamerRights.EnterWriteLock();
-					Debug.WriteLine("3");
-					gamers.Add(client.Client.RemoteEndPoint, (id, messageSender));
-					gamerRights.ExitWriteLock();
-					Debug.WriteLine("4");
+					if (gamers.Count + 1 < byte.MaxValue)
+					{
+						BigInteger id = gamers.Count;
+						gamerRights.EnterWriteLock();
+						try
+						{
+							gamers.Add(client.Client.RemoteEndPoint, (id, handler));
+						}
+						finally
+						{
+							gamerRights.ExitWriteLock();
+						}
 
-					messageSender.QueueMessage(new ConnectServer(true, PlayerIntegerSize, id, gamers.Count));
-					messageSender.SendOneMessage();
-					Debug.WriteLine("5");
+						messageSender.QueueMessage(new ConnectServer(true, PlayerIntegerSize, id, gamers.Count));
+						messageSender.SendOneMessage();
 
-					SendToAllExcept(new PeerConnectedServer(true, gamers.Count, id), client.Client.RemoteEndPoint);
-					Debug.WriteLine("6");
+						SendToAllExcept(new PeerConnectedServer(true, gamers.Count, id), client.Client.RemoteEndPoint);
 
-					reactor.PassToPeers += PassToPeers;
-					reactor.IsConnected = true;
+						handler.PassToPeers += PassToPeers;
+						handler.StartGame += StartGame;
+						handler.Broadcast += SendToAll;
+						handler.IsConnected = true;
+						handler.Id = id;
 
-					Task.Run(Send);
-					Debug.WriteLine("7");
+						Task.Run(Send);
+					}
+					else
+					{
+						messageSender.QueueMessage(new ConnectServer(false, 0, 0, 0));
+						messageSender.SendOneMessage();
+
+						client.Dispose();
+						handler.Connect -= Connect;
+
+						return;
+					}
 				}
-				else
+				finally
 				{
-					messageSender.QueueMessage(new ConnectServer(false, 0, 0, 0));
-					messageSender.SendOneMessage();
-
-					client.Dispose();
-					reactor.Connect -= Connect;
+					gamerRights.ExitUpgradeableReadLock();
 				}
-				gamerRights.ExitUpgradeableReadLock();
+
+				if (gamers.Count == byte.MaxValue)
+				{
+					StartGame();
+				}
 			}
 			void Send()
 			{
@@ -111,40 +126,75 @@ namespace Polytet.Server
 				EndPoint endPoint = client.Client.RemoteEndPoint;
 				console.Error.WriteLine($"Destroying {endPoint} because of {destroyer}. {ex?.Message ?? ""}");
 				client.Dispose();
-				reactor.PassToPeers -= PassToPeers;
-				reactor.Connect -= Connect;
+				handler.PassToPeers -= PassToPeers;
+				handler.Connect -= Connect;
+				handler.StartGame -= StartGame;
 
 				gamerRights.EnterWriteLock();
-				var (id, _) = gamers[endPoint];
-				gamers.Remove(endPoint);
-				SendToAllExcept(new PeerConnectedServer(false, gamers.Count, id), endPoint);
-				gamerRights.ExitWriteLock();
+				try
+				{
+					var (id, _) = gamers[endPoint];
+					gamers.Remove(endPoint);
+					SendToAllExcept(new PeerConnectedServer(false, gamers.Count, id), endPoint);
+				}
+				finally
+				{
+					gamerRights.ExitWriteLock();
+				}
 			}
 		}
 
+		private void StartGame()
+		{
+			HasStarted = true;
+			foreach (var kvp in gamers)
+			{
+				kvp.Value.handler.MessageSender.QueueMessage(new StartGame());
+				kvp.Value.handler.Start();
+			}
+		}
+
+		private StateUpdateServer GetStateOf(BigInteger id)
+		{
+			return gamers.First(g => g.Value.id == id).Value.handler.GetState();
+		}
+
+		private void SendToAll(IMessage message) => SendToAllExcept(message, null);
 		private void SendToAllExcept(IMessage message, EndPoint? except)
 		{
 			gamerRights.EnterReadLock();
-			foreach (var kvp in gamers)
+			try
 			{
-				if (kvp.Key != except)
+				foreach (var kvp in gamers)
 				{
-					kvp.Value.messageSender.QueueMessage(message);
+					if (kvp.Key != except)
+					{
+						kvp.Value.handler.MessageSender.QueueMessage(message);
+					}
 				}
 			}
-			gamerRights.ExitReadLock();
+			finally
+			{
+				gamerRights.ExitReadLock();
+			}
 		}
 		private void SendRawToAllExcept(byte[] bytes, EndPoint? except)
 		{
 			gamerRights.EnterReadLock();
-			foreach (var kvp in gamers)
+			try
 			{
-				if (kvp.Key != except)
+				foreach (var kvp in gamers)
 				{
-					kvp.Value.messageSender.QueueRawMessage(bytes);
+					if (kvp.Key != except)
+					{
+						kvp.Value.handler.MessageSender.QueueRawMessage(bytes);
+					}
 				}
 			}
-			gamerRights.ExitReadLock();
+			finally
+			{
+				gamerRights.ExitReadLock();
+			}
 		}
 	}
 }
