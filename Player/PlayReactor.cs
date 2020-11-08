@@ -27,6 +27,10 @@ namespace Polytet.Player
 		public PlayReactor(TcpClient client, ConnectServer ss)
 		{
 			playerId = ss.PlayerId;
+			if (playerId != 0)
+			{
+				opponent = 0;
+			}
 
 			this.client = client;
 			messagePasser = new TCPMessagePasser(this.client.GetStream(), this);
