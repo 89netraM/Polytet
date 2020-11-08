@@ -20,7 +20,14 @@ namespace Polytet.Communication
 			byte[] bytes;
 			while (!messages.TryDequeue(out bytes));
 
-			networkStream.Write(bytes, 0, bytes.Length);
+			byte[] all = new byte[bytes.Length + 4];
+			for (int i = 0; i < 4; i++)
+			{
+				all[i] = (byte)(bytes.Length >> (24 - 8 * i) & 0b_1111_1111);
+			}
+			bytes.CopyTo(all, 4);
+
+			networkStream.Write(all, 0, all.Length);
 		}
 
 		public void QueueMessage(IMessage message) => QueueRawMessage(Serializer.Serialize(message, PlayerIntegerSize));

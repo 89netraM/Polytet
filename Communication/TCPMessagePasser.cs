@@ -49,26 +49,24 @@ namespace Polytet.Communication
 		public void ListenAndReactClient() => ListenAndReact(MessageReceiver.Client);
 		internal void ListenAndReact(MessageReceiver receiver)
 		{
-			IList<(byte[] buffer, int length)> buffers = new List<(byte[], int)>();
-			do
+			byte[] size = new byte[4];
+			int readSize = networkStream.Read(size, 0, size.Length);
+			if (readSize != size.Length)
 			{
-				byte[] buffer = new byte[bufferSize];
+				throw new Exception("Stream end");
+			}
 
-				int length;
-				do
-				{
-					length = networkStream.Read(buffer, 0, bufferSize);
-				} while (length == 0);
-
-				buffers.Add((buffer, length));
-			} while (networkStream.DataAvailable);
-
-			byte[] bytes = new byte[buffers.Sum(t => t.length)];
-			int i = 0;
-			foreach (var (buffer, length) in buffers)
+			int messageLength = 0;
+			for (int i = 0; i < size.Length; i++)
 			{
-				Array.Copy(buffer, 0, bytes, i, length);
-				i += length;
+				messageLength |= size[i] << (24 - 8 * i);
+			}
+
+			byte[] bytes = new byte[messageLength];
+			int readBytes = networkStream.Read(bytes, 0, messageLength);
+			if (readBytes != messageLength)
+			{
+				throw new Exception("Stream end");
 			}
 
 			try

@@ -26,7 +26,11 @@ namespace Polytet.Communication.UnitTests
 
 			using TcpClient sender = new TcpClient();
 			sender.Connect(endPoint);
-			sender.GetStream().Write(Serializer.Serialize(message, playerIntegerSize));
+			byte[] bytes = Serializer.Serialize(message, playerIntegerSize);
+			byte[] all = new byte[bytes.Length + 4];
+			all[3] = (byte)bytes.Length;
+			bytes.CopyTo(all, 4);
+			sender.GetStream().Write(all);
 			sender.Close();
 
 			using TcpClient receiver = await receiverTask;
@@ -42,10 +46,10 @@ namespace Polytet.Communication.UnitTests
 		[TestMethod]
 		public async Task ReactToLongMessages()
 		{
-			/// <see cref="TCPMessagePasser"/> has a buffer size of 256
-			const int tooLongMessage = 300;
+			/// <see cref="TCPMessagePasser"/> can read up to int.MaxValue
+			const int longMessage = 300;
 
-			IMessage message = new ChatMessageClient(0, new String('e', tooLongMessage));
+			IMessage message = new ChatMessageClient(0, new String('e', longMessage));
 
 			TcpListener listener = new TcpListener(endPoint);
 			listener.Start();
@@ -53,7 +57,12 @@ namespace Polytet.Communication.UnitTests
 
 			using TcpClient sender = new TcpClient();
 			sender.Connect(endPoint);
-			sender.GetStream().Write(Serializer.Serialize(message, playerIntegerSize));
+			byte[] bytes = Serializer.Serialize(message, playerIntegerSize);
+			byte[] all = new byte[bytes.Length + 4];
+			all[2] = (byte)(bytes.Length >> 8 & 0b_1111_1111);
+			all[3] = (byte)(bytes.Length & 0b_1111_1111);
+			bytes.CopyTo(all, 4);
+			sender.GetStream().Write(all);
 			sender.Close();
 
 			using TcpClient receiver = await receiverTask;
@@ -78,7 +87,11 @@ namespace Polytet.Communication.UnitTests
 
 			using TcpClient sender = new TcpClient();
 			sender.Connect(endPoint);
-			sender.GetStream().Write(Serializer.Serialize(message, playerIntegerSize));
+			byte[] bytes = Serializer.Serialize(message, playerIntegerSize);
+			byte[] all = new byte[bytes.Length + 4];
+			all[3] = (byte)bytes.Length;
+			bytes.CopyTo(all, 4);
+			sender.GetStream().Write(all);
 			sender.Close();
 
 			using TcpClient receiver = await receiverTask;

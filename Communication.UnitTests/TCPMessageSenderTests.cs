@@ -34,7 +34,7 @@ namespace Polytet.Communication.UnitTests
 
 			byte[] bytes = new byte[256];
 			receiver.GetStream().Read(bytes, 0, bytes.Length);
-			IMessage receivedMessage = Serializer.DeSerializeClient(bytes, playerIntegerSize);
+			IMessage receivedMessage = Serializer.DeSerializeClient(bytes[4..], playerIntegerSize);
 
 			Assert.AreEqual(message, receivedMessage, "Should receive the same message as was sent.");
 		}
