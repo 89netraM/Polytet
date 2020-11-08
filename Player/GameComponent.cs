@@ -3,6 +3,7 @@ using ConsoleElmish;
 using ConsoleElmish.Common;
 using Polytet.Model;
 using System;
+using Polytet.Communication.Messages;
 
 namespace Polytet.Player
 {
@@ -51,20 +52,24 @@ namespace Polytet.Player
 
 		private readonly bool shouldAcceptInput;
 
-		public GameComponent(Side side, Game game, bool shouldAcceptInput) : base()
+		private readonly Action<Move>? makeMove;
+
+		public GameComponent(Side side, Game game, bool shouldAcceptInput = false, Action<Move>? makeMove = null) : base()
 		{
 			this.side = side;
 
 			this.game = game;
 
 			this.shouldAcceptInput = shouldAcceptInput;
+
+			this.makeMove = makeMove;
 		}
 
 		public override Buffer Render(uint height, uint width)
 		{
 			return new Buffer
 			{
-				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game, shouldAcceptInput)) },
+				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game, shouldAcceptInput, makeMove)) },
 				{ new Area(0, SidebarColumn(side), 4, 12), new BorderComponent(new NextPieceComponent(game)) },
 				{ new Area(3, SidebarColumn(side), 4, 12), new BorderComponent(new ScoreComponent(game)) },
 				{ new Area(0, CenterColumn(side), 1, 1), '╦' },
