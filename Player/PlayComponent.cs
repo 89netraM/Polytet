@@ -20,12 +20,15 @@ namespace Polytet.Player
 		};
 
 		private readonly Game game;
+		public bool ShouldAcceptInput { get; }
 
-		public PlayComponent(Game game) : base()
+		public PlayComponent(Game game, bool shouldAcceptInput) : base()
 		{
 			this.game = game ?? throw new ArgumentNullException(nameof(game));
 
 			this.game.Update += Game_Update;
+
+			ShouldAcceptInput = shouldAcceptInput;
 
 			Input.KeyDown += Input_KeyDown;
 			Input.Start();
@@ -33,30 +36,33 @@ namespace Polytet.Player
 
 		private void Input_KeyDown(ConsoleKeyInfo obj)
 		{
-			switch (obj.Key)
+			if (ShouldAcceptInput)
 			{
-				case ConsoleKey.LeftArrow:
-				case ConsoleKey.A:
-					game.MoveLeft();
-					break;
-				case ConsoleKey.RightArrow:
-				case ConsoleKey.D:
-					game.MoveRight();
-					break;
-				case ConsoleKey.DownArrow:
-				case ConsoleKey.S:
-					game.MoveDown();
-					break;
-				case ConsoleKey.OemComma:
-				case ConsoleKey.Q:
-					game.RotateCounterClockwise();
-					break;
-				case ConsoleKey.OemPeriod:
-				case ConsoleKey.E:
-					game.RotateClockwise();
-					break;
-				default:
-					break;
+				switch (obj.Key)
+				{
+					case ConsoleKey.LeftArrow:
+					case ConsoleKey.A:
+						game.MoveLeft();
+						break;
+					case ConsoleKey.RightArrow:
+					case ConsoleKey.D:
+						game.MoveRight();
+						break;
+					case ConsoleKey.DownArrow:
+					case ConsoleKey.S:
+						game.MoveDown();
+						break;
+					case ConsoleKey.OemComma:
+					case ConsoleKey.Q:
+						game.RotateCounterClockwise();
+						break;
+					case ConsoleKey.OemPeriod:
+					case ConsoleKey.E:
+						game.RotateClockwise();
+						break;
+					default:
+						break;
+				}
 			}
 		}
 

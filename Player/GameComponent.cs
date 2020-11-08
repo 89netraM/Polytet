@@ -1,12 +1,11 @@
 ﻿using Buffer = ConsoleElmish.Buffer;
 using ConsoleElmish;
 using ConsoleElmish.Common;
+using Polytet.Model;
 using System;
 
 namespace Polytet.Player
 {
-	using Model;
-
 	class GameComponent : Component<EmptyState>
 	{
 		private static uint MainColumn(Side side) => side switch
@@ -49,31 +48,23 @@ namespace Polytet.Player
 		private readonly Side side;
 
 		private readonly Game game;
-		private readonly Player player;
 
-		public GameComponent(Side side) : base()
+		private readonly bool shouldAcceptInput;
+
+		public GameComponent(Side side, Game game, bool shouldAcceptInput) : base()
 		{
 			this.side = side;
 
-			game = new Game();
+			this.game = game;
 
-			player = new Player(game, 1000);
-			player.GameOver += Player_GameOver;
-
-			player.Start();
-		}
-
-		private void Player_GameOver()
-		{
-			Renderer.Instance.Stop();
-			Environment.Exit(0);
+			this.shouldAcceptInput = shouldAcceptInput;
 		}
 
 		public override Buffer Render(uint height, uint width)
 		{
 			return new Buffer
 			{
-				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game)) },
+				{ new Area(0, MainColumn(side), 22, 22), new BorderComponent(new PlayComponent(game, shouldAcceptInput)) },
 				{ new Area(0, SidebarColumn(side), 4, 12), new BorderComponent(new NextPieceComponent(game)) },
 				{ new Area(3, SidebarColumn(side), 4, 12), new BorderComponent(new ScoreComponent(game)) },
 				{ new Area(0, CenterColumn(side), 1, 1), '╦' },
@@ -81,11 +72,6 @@ namespace Polytet.Player
 				{ new Area(3, SidebarOuterColumn(side), 1, 1), OuterConector(side) },
 				{ new Area(6, CenterColumn(side), 1, 1), InnerConector(side) }
 			};
-		}
-
-		public override void Dispose()
-		{
-			player.GameOver -= Player_GameOver;
 		}
 
 		public enum Side
