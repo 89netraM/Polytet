@@ -195,6 +195,10 @@ namespace Polytet.Player
 				if (message == "/start")
 				{
 					messageSender.QueueMessage(new StartGame());
+
+					const string startingGame = "Starting game...";
+					main.AddChatMessage(playerId, startingGame);
+					messageSender.QueueMessage(new ChatMessageClient(playerId, startingGame));
 				}
 				else
 				{
